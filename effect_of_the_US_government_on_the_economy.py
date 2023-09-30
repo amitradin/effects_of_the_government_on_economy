@@ -279,25 +279,79 @@ f.set_figwidth(30)
 plt.subplots_adjust(bottom=0.2,top=1,left=0.1,right=1,wspace=0.2,hspace=1)
 axes=[ax1,ax2,ax3,ax4,ax5,ax6,ax7,ax8]#make the subplots preattier
 for ax in axes:
-    sns.despine()
+    sns.despine()#remove the grid lines
+
 axes_twos=[[ax1,ax2],[ax3,ax4],[ax5,ax6],[ax7,ax8]]
 stockes=['amazon_open','apple_open','microsoft_open','facebook_open']
-for axes,stock in zip(axes_twos,stockes):
-    axes[0].scatter(combine_pivot[name][combine_pivot['president']=='Trump'],combine_pivot['value'][combine_pivot['president']=='Trump'],color='red')
+for axes,stock in zip(axes_twos,stockes):#we use a for loop to create all the subplots
+    axes[0].scatter(combine_pivot[stock][combine_pivot['president']=='Trump'],combine_pivot['value'][combine_pivot['president']=='Trump'],label='Trump',color='red')
     axes[0].set_title('Infaltion in Trump\'s era vs {}'.format(stock))
+    axes[0].legend()
     axes[0].set_xlabel('stock value')
     axes[0].set_ylabel('inflation rate')
 
-    axes[1].scatter(combine_pivot[name][combine_pivot['president']=='Biden'],combine_pivot['value'][combine_pivot['president']=='Biden'],color='blue')
+    axes[1].scatter(combine_pivot[stock][combine_pivot['president']=='Biden'],combine_pivot['value'][combine_pivot['president']=='Biden'],color='blue',label='Biden')
     axes[1].set_title('Infaltion in Biden\'s era vs {}'.format(stock))
     axes[1].set_xlabel('stock value')
     axes[1].set_ylabel('inflation rate')
+    axes[1].legend()
 
 plt.show()
 """That is very interesting. We plotted the inflation rate vs tech companies in Biden's vs Trump's tenure
 We see that when Trump was the president There was a correlation between the stock price and the inflation rate
 When the inflaiton has gone up so has the stock 
-While on Biden's tenure, there was no correlation to speak off, the stock's prices behave abnormally and siminglly at random...
+While on Biden's tenure, when the inflation has gone up the stock prices have accually gone down or stayed the same. 
 We can conclude that the tech indestry was at a much better place when Trump was the president.
-It was a lot more stable and predictable"""
+stock prices have gone up with the inflaiton so people would not lose their money"""
+
+
+#lets filter it by month and year just like the prevoius data set so we can merge it with the inflation rate
+oil_gas['year']=oil_gas['DATE'].apply(lambda date: date.year)
+oil_gas['month']=oil_gas['DATE'].apply(lambda date: date.month)#we add year and month so we can match the values to the inflation data set
+oil_gas_pivot=oil_gas[['year','month','gas','oil']]
+oil_gas_pivot=pd.pivot_table(oil_gas_pivot,index=['year','month'],aggfunc=np.mean).reset_index()#grouping by year and month
+
+def create_date(row):
+    year=row.loc['year']
+    month=row.loc['month']
+    day=1
+    date=datetime.datetime(year=int(year),month=int(month),day=int(day))
+    return date
+
+oil_gas_pivot['date']=oil_gas_pivot.apply(create_date,axis=1)#now we have the avergage oil and gas stock prices for every month of the year
+oil_gas_inflation=pd.merge(left=oil_gas_pivot,right=inflation,on='date',how='inner')
+
+#now lets plot
+f,[[ax1,ax2],[ax3,ax4]]=plt.subplots(ncols=2,nrows=2)
+f.set_figheight(20)
+f.set_figwidth(20)
+axes=[ax1,ax2,ax3,ax4]
+for ax in axes:
+    sns.despine()
+
+axes_group=[[ax1,ax2],[ax3,ax4]]
+stocks=['oil','gas']
+for axes, stock in zip(axes_group,stocks):#we use a for loop to prevent reapting code
+    axes[0].scatter(oil_gas_inflation[stock][oil_gas_inflation['president']=='Trump'],oil_gas_inflation['value'][oil_gas_inflation['president']=='Trump'],color='red',label='Trump')
+    axes[0].set_title('inflation in Trump\'s era vs {}'.format(stock))
+    axes[0].legend()
+    axes[0].set_xlabel('{} price'.format(stock))#adding the name of the current stock we are using 
+    axes[0].set_ylabel('infaltion rate')
+
+    axes[1].scatter(oil_gas_inflation[stock][oil_gas_inflation['president']=='Biden'],oil_gas_inflation['value'][oil_gas_inflation['president']=='Biden'],color='blue',label='Biden')
+    axes[1].set_title('inflation in Biden\'s era vs {}'.format(stock))
+    axes[1].legend()
+    axes[1].set_xlabel('{} price'.format(stock))#adding the name of the current stock we are using 
+    axes[1].set_ylabel('infaltion rate')
+plt.show()
+
+"""Lets take a look of the results we got and analyze them.
+It looks like there is a concridiction between the crude oil market and the gas market
+Lets first take a look at the crude oil markets 
+When inflation went up on trump's tenure the crude oil stock price has gone up and on Biden's tenure when inflation went up the crude oil stock went down 
+The opposite is true for the gas stock price 
+when iflation has gone up the gas stock has gonne down on Trump's tenure
+And when inflation has gone up up Biden's tenure the gas price have gone up
+"""
+
 
